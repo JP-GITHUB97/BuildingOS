@@ -10,6 +10,10 @@ class BuildingCreate(BuildingBase):
     pass
 
 
+class BuildingUpdate(BuildingBase):
+    pass
+
+
 class BuildingRead(BuildingBase):
     id: int
 

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.building import Building
-from app.schemas.building import BuildingCreate, BuildingRead
+from app.schemas.building import BuildingCreate, BuildingRead, BuildingUpdate
 
 
 router = APIRouter(
@@ -23,7 +24,16 @@ def create_building(
     )
 
     db.add(db_building)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Building code already exists",
+        )
+
     db.refresh(db_building)
 
     return db_building
@@ -39,12 +49,51 @@ def get_building(
     building_id: int,
     db: Session = Depends(get_db),
 ):
-    building = db.query(Building).filter(Building.id == building_id).first()
+    building = (
+        db.query(Building)
+        .filter(Building.id == building_id)
+        .first()
+    )
 
     if building is None:
         raise HTTPException(
             status_code=404,
             detail="Building not found",
         )
+
+    return building
+
+
+@router.put("/{building_id}", response_model=BuildingRead)
+def update_building(
+    building_id: int,
+    building_update: BuildingUpdate,
+    db: Session = Depends(get_db),
+):
+    building = (
+        db.query(Building)
+        .filter(Building.id == building_id)
+        .first()
+    )
+
+    if building is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Building not found",
+        )
+
+    building.name = building_update.name
+    building.code = building_update.code
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Building code already exists",
+        )
+
+    db.refresh(building)
 
     return building
