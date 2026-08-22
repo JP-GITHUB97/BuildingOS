@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -97,3 +97,23 @@ def update_building(
     db.refresh(building)
 
     return building
+
+@router.delete("/{building_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_building(
+    building_id: int,
+    db: Session = Depends(get_db),
+):
+    building = (
+        db.query(Building)
+        .filter(Building.id == building_id)
+        .first()
+    )
+
+    if building is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Building not found",
+        )
+
+    db.delete(building)
+    db.commit()
