@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -32,3 +32,19 @@ def create_building(
 @router.get("/", response_model=list[BuildingRead])
 def get_buildings(db: Session = Depends(get_db)):
     return db.query(Building).all()
+
+
+@router.get("/{building_id}", response_model=BuildingRead)
+def get_building(
+    building_id: int,
+    db: Session = Depends(get_db),
+):
+    building = db.query(Building).filter(Building.id == building_id).first()
+
+    if building is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Building not found",
+        )
+
+    return building
