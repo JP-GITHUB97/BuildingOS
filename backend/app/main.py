@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from app.api.buildings import router as buildings_router
 from app.api.rooms import router as rooms_router
+from app.api.equipment import router as equipment_router
 
 
 app = FastAPI(
@@ -13,6 +14,7 @@ app = FastAPI(
 
 app.include_router(buildings_router)
 app.include_router(rooms_router)
+app.include_router(equipment_router)
 
 
 @app.get("/health")

@@ -19,3 +19,12 @@ class Room(Base):
     building: Mapped["Building"] = relationship(
         back_populates="rooms",
     )
+
+    equipments: Mapped[list["Equipment"]] = relationship(
+        back_populates="room",
+        cascade="all, delete-orphan",
+    )
+
+
+from app.models.building import Building
+from app.models.equipment import Equipment
