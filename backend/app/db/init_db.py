@@ -1,5 +1,6 @@
 from app.db.session import Base, engine
 from app.models.building import Building
+from app.models.room import Room
 
 
 def init_db() -> None:
