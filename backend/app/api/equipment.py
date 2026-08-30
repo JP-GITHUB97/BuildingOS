@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from app.models.point import Point
+from app.models.point_value import PointValue
 
 from app.db.session import get_db
 from app.models.equipment import Equipment
 from app.models.room import Room
 from app.schemas.equipment import EquipmentCreate, EquipmentRead, EquipmentUpdate
+from app.schemas.equipment_details import EquipmentDetailsRead
 
 
 router = APIRouter(
@@ -87,6 +90,67 @@ def get_equipment(
         )
 
     return equipment
+
+@router.get("/{equipment_id}/details", response_model=EquipmentDetailsRead)
+def get_equipment_details(
+    equipment_id: int,
+    db: Session = Depends(get_db),
+):
+    equipment = (
+        db.query(Equipment)
+        .filter(Equipment.id == equipment_id)
+        .first()
+    )
+
+    if equipment is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Equipment not found",
+        )
+
+    points = (
+        db.query(Point)
+        .filter(Point.equipment_id == equipment_id)
+        .all()
+    )
+
+    point_details = []
+
+    for point in points:
+        latest_value = (
+            db.query(PointValue)
+            .filter(PointValue.point_id == point.id)
+            .order_by(PointValue.timestamp.desc())
+            .first()
+        )
+
+        point_details.append(
+            {
+                "id": point.id,
+                "name": point.name,
+                "code": point.code,
+                "type": point.type,
+                "unit": point.unit,
+                "latest_value": (
+                    latest_value.value
+                    if latest_value is not None
+                    else None
+                ),
+                "latest_timestamp": (
+                    latest_value.timestamp
+                    if latest_value is not None
+                    else None
+                ),
+            }
+        )
+
+    return {
+        "id": equipment.id,
+        "name": equipment.name,
+        "code": equipment.code,
+        "room_id": equipment.room_id,
+        "points": point_details,
+    }
 
 
 @router.put("/{equipment_id}", response_model=EquipmentRead)
