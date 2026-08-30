@@ -22,5 +22,11 @@ class Point(Base):
         back_populates="points",
     )
 
+    values: Mapped[list["PointValue"]] = relationship(
+        back_populates="point",
+        cascade="all, delete-orphan",
+    )
+
 
 from app.models.equipment import Equipment
+from app.models.point_value import PointValue
