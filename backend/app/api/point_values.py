@@ -71,3 +71,36 @@ def get_values_by_point(
         .order_by(PointValue.timestamp)
         .all()
     )
+
+
+@router.get("/point/{point_id}/latest", response_model=PointValueRead)
+def get_latest_point_value(
+    point_id: int,
+    db: Session = Depends(get_db),
+):
+    point = (
+        db.query(Point)
+        .filter(Point.id == point_id)
+        .first()
+    )
+
+    if point is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Point not found",
+        )
+
+    point_value = (
+        db.query(PointValue)
+        .filter(PointValue.point_id == point_id)
+        .order_by(PointValue.timestamp.desc())
+        .first()
+    )
+
+    if point_value is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No value found for this point",
+        )
+
+    return point_value
